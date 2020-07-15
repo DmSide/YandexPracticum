@@ -1,5 +1,6 @@
 import sqlite3
 import json
+import settings
 
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
@@ -10,7 +11,7 @@ def extract():
     extract data from sql-db
     :return:
     """
-    connection = sqlite3.connect("db.sqlite")
+    connection = sqlite3.connect(settings.DB_PATH)
     cursor = connection.cursor()
 
     # Наверняка это пилится в один sql - запрос, но мне как-то лениво)
@@ -112,7 +113,7 @@ def load(acts):
     :param acts:
     :return:
     """
-    es = Elasticsearch([{'host': '192.168.1.252', 'port': 9200}])
+    es = Elasticsearch([{'host': settings.ELASTIC_HOST, 'port': settings.ELASTIC_PORT}])
     bulk(es, acts)
 
     return True
