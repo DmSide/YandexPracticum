@@ -35,9 +35,6 @@ def extract():
 
     raw_data = cursor.fetchall()
 
-    # cursor.execute('pragma table_info(movies)')
-    # pprint(cursor.fetchall())
-
     # Нужны для соответсвия идентификатора и человекочитаемого названия
     actors = {row[0]: row[1] for row in cursor.execute('select * from actors where name != "N/A"')}
     writers = {row[0]: row[1] for row in cursor.execute('select * from writers where name != "N/A"')}
@@ -94,7 +91,6 @@ def transform(__actors, __writers, __raw_data):
 
         for key in document.keys():
             if document[key] == 'N/A':
-                # print('hehe')
                 document[key] = None
 
         document['actors_names'] = ", ".join([actor["name"] for actor in document['actors'] if actor]) or None
@@ -107,6 +103,7 @@ def transform(__actors, __writers, __raw_data):
 
     return documents_list
 
+
 def load(acts):
     """
 
@@ -117,6 +114,7 @@ def load(acts):
     bulk(es, acts)
 
     return True
+
 
 if __name__ == '__main__':
     load(transform(*extract()))
