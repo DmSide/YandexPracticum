@@ -48,15 +48,15 @@ def extract():
     return cursor.fetchall()
 
 
-def transform(__writers, __raw_data):
+def transform(_writers, _raw_data):
     """
 
-    :param __writers:
-    :param __raw_data:
+    :param _writers:
+    :param _raw_data:
     :return:
     """
     documents_list = []
-    for movie_info in __raw_data:
+    for movie_info in _raw_data:
         # Разыменование списка
         movie_id, imdb_rating, genre, title, description, director, actors_id, actors_name, raw_writers = movie_info
         # Получаем список ID и имен актеров
@@ -67,7 +67,7 @@ def transform(__writers, __raw_data):
         parsed = json.loads(raw_writers)
         new_writers = ','.join([writer_row['id'] for writer_row in parsed])
 
-        writers_list = [(writer_id, __writers.get(writer_id)) for writer_id in new_writers.split(',')]
+        writers_list = [(writer_id, _writers.get(writer_id)) for writer_id in new_writers.split(',')]
         actors_list = [
             {
                 "id": actor[0],
