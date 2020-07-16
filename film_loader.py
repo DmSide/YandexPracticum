@@ -27,7 +27,7 @@ def extract():
     # Получаем все поля для индекса, кроме списка актеров и сценаристов, для них только id
     cursor.execute("""
         SELECT
-        m.id, m.imdb_rating, m.genre, m.title, m.plot, m.director,
+            m.id, m.imdb_rating, m.genre, m.title, m.plot, m.director,
         -- comma-separated actor_ids
         GROUP_CONCAT(DISTINCT a.id) as actor_ids, 
         -- comma-separated actor_names
@@ -67,7 +67,6 @@ def transform(_writers, _raw_data):
                 "name": actor[1]
             }
             for actor in zip(actors_ids, actors_names)
-            if actor[1]
         ]
 
         # Получаем список writers
@@ -82,7 +81,7 @@ def transform(_writers, _raw_data):
         ]
 
         document = {
-            "_index": "movies",
+            "_index": settings.ELASTIC_INDEX,
             "_id": movie_id,
             "id": movie_id,
             "imdb_rating": imdb_rating,
@@ -112,10 +111,7 @@ def load(acts):
     :param acts:
     :return:
     """
-    es = Elasticsearch([{
-        'host': settings.ELASTIC_HOST,
-        'port': settings.ELASTIC_PORT
-    }])
+    es = Elasticsearch(settings.ELASTIC_SETTINGS)
     bulk(es, acts)
 
     return True
