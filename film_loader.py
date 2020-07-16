@@ -18,15 +18,18 @@ def extract():
 
     # Получаем все поля для индекса, кроме списка актеров и сценаристов, для них только id
     cursor.execute("""
-        select id, imdb_rating, genre, title, plot, director,
-        -- comma-separated actor_id's
-        (
-             select GROUP_CONCAT(actor_id)
-             from movie_actors
-             where movie_id = movies.id
-        ) as actors_id,
-        max(writer, writers) as writers
-        from movies
+        SELECT
+        m.id, m.imdb_rating, m.genre, m.title, m.plot, m.director,
+        -- comma-separated actor_ids
+        GROUP_CONCAT(DISTINCT a.id) as actor_ids, 
+        -- comma-separated actor_names
+        GROUP_CONCAT(DISTINCT a.name) as actor_names,
+        max(writer, writers) as writer_ids
+        FROM movies as m
+        LEFT JOIN movie_actors as ma ON m.id == ma.movie_id
+        LEFT JOIN actors as a ON ma.actor_id == a.id
+        WHERE a.name != "N/A"
+        GROUP BY m.id 
     """)
 
     raw_data = cursor.fetchall()
