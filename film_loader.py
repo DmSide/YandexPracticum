@@ -35,16 +35,14 @@ def extract():
     raw_data = cursor.fetchall()
 
     # Нужны для соответсвия идентификатора и человекочитаемого названия
-    actors = {row[0]: row[1] for row in cursor.execute('select * from actors where name != "N/A"')}
     writers = {row[0]: row[1] for row in cursor.execute('select * from writers where name != "N/A"')}
 
-    return actors, writers, raw_data
+    return writers, raw_data
 
 
-def transform(__actors, __writers, __raw_data):
+def transform(__writers, __raw_data):
     """
 
-    :param __actors:
     :param __writers:
     :param __raw_data:
     :return:
@@ -52,7 +50,10 @@ def transform(__actors, __writers, __raw_data):
     documents_list = []
     for movie_info in __raw_data:
         # Разыменование списка
-        movie_id, imdb_rating, genre, title, description, director, raw_actors, raw_writers = movie_info
+        movie_id, imdb_rating, genre, title, description, director, actors_id, actors_name, raw_writers = movie_info
+        # Получаем список ID и имен актеров
+        actors_ids = actors_id.split(",")
+        actors_names = actors_name.split(",")
 
         if raw_writers[0] == '[':
             parsed = json.loads(raw_writers)
@@ -61,7 +62,14 @@ def transform(__actors, __writers, __raw_data):
             new_writers = raw_writers
 
         writers_list = [(writer_id, __writers.get(writer_id)) for writer_id in new_writers.split(',')]
-        actors_list = [(actor_id, __actors.get(int(actor_id))) for actor_id in raw_actors.split(',')]
+        actors_list = [
+            {
+                "id": actor[0],
+                "name": actor[1]
+            }
+            for actor in zip(actors_ids, actors_names)
+            if actor[1]
+        ]
 
         document = {
             "_index": "movies",
@@ -72,13 +80,7 @@ def transform(__actors, __writers, __raw_data):
             "title": title,
             "description": description,
             "director": director,
-            "actors": [
-                {
-                    "id": actor[0],
-                    "name": actor[1]
-                }
-                for actor in set(actors_list) if actor[1]
-            ],
+            "actors": actors_list,
             "writers": [
                 {
                     "id": writer[0],
@@ -92,7 +94,7 @@ def transform(__actors, __writers, __raw_data):
             if document[key] == 'N/A':
                 document[key] = None
 
-        document['actors_names'] = ", ".join([actor["name"] for actor in document['actors'] if actor]) or None
+        document['actors_names'] = actors_name
         document['writers_names'] = ", ".join([writer["name"] for writer in document['writers'] if writer]) or None
 
         import pprint
