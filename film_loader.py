@@ -101,9 +101,6 @@ def transform(_writers, _raw_data):
         document['actors_names'] = actors_name or None
         document['writers_names'] = writer_names or None
 
-        import pprint
-        pprint.pprint(document)
-
         documents_list.append(document)
 
     return documents_list
