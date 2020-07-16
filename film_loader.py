@@ -21,14 +21,10 @@ def extract():
         select id, imdb_rating, genre, title, plot, director,
         -- comma-separated actor_id's
         (
-            select GROUP_CONCAT(actor_id) from
-            (
-                select actor_id
-                from movie_actors
-                where movie_id = movies.id
-            )
+             select GROUP_CONCAT(actor_id)
+             from movie_actors
+             where movie_id = movies.id
         ) as actors_id,
-        
         max(writer, writers) as writers
         from movies
     """)
