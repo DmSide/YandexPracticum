@@ -107,12 +107,16 @@ def transform(_writers, _raw_data):
 
 def load(acts):
     """
-
+    Load acts to the ElasticSearch
     :param acts:
     :return:
     """
-    es = Elasticsearch(settings.ELASTIC_SETTINGS)
-    bulk(es, acts)
+    with Elasticsearch(settings.ELASTIC_SETTINGS) as es:
+        try:
+            bulk(es, acts)
+        except ConnectionError:
+            print("No connection with ElasticSearch")
+            return False
 
     return True
 

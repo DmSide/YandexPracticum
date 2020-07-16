@@ -1,3 +1,8 @@
 ELASTIC_HOST = '192.168.1.252'
 ELASTIC_PORT = 9200
 DB_PATH = "db.sqlite"
+ELASTIC_INDEX = "movies"
+ELASTIC_SETTINGS = [{
+    'host': ELASTIC_HOST,
+    'port': ELASTIC_PORT
+}]
