@@ -62,12 +62,6 @@ def transform(_writers, _raw_data):
         # Получаем список ID и имен актеров
         actors_ids = actors_id.split(",")
         actors_names = actors_name.split(",")
-
-        # Получаем список writers
-        parsed = json.loads(raw_writers)
-        new_writers = ','.join([writer_row['id'] for writer_row in parsed])
-
-        writers_list = [(writer_id, _writers.get(writer_id)) for writer_id in new_writers.split(',')]
         actors_list = [
             {
                 "id": actor[0],
@@ -75,6 +69,18 @@ def transform(_writers, _raw_data):
             }
             for actor in zip(actors_ids, actors_names)
             if actor[1]
+        ]
+
+        # Получаем список writers
+        writer_ids = [writer_row['id'] for writer_row in json.loads(raw_writers)]
+        writer_names = [_writers.get(_id) for _id in writer_ids if _writers.get(_id)]
+        writer_names_str = ','.join(writer_names)
+        writer_list = [
+            {
+                "id": writer[0],
+                "name": writer[1]
+            }
+            for writer in zip(writer_ids, writer_names)
         ]
 
         document = {
@@ -87,21 +93,15 @@ def transform(_writers, _raw_data):
             "description": description,
             "director": director,
             "actors": actors_list,
-            "writers": [
-                {
-                    "id": writer[0],
-                    "name": writer[1]
-                }
-                for writer in set(writers_list) if writer[1]
-            ]
+            "writers": writer_list
         }
 
         for key in document.keys():
             if document[key] == 'N/A':
                 document[key] = None
 
-        document['actors_names'] = actors_name
-        document['writers_names'] = ", ".join([writer["name"] for writer in document['writers'] if writer]) or None
+        document['actors_names'] = actors_name or None
+        document['writers_names'] = writer_names_str or None
 
         import pprint
         pprint.pprint(document)
@@ -127,4 +127,4 @@ def load(acts):
 
 
 if __name__ == '__main__':
-    load(transform(*extract(), *get_writers()))
+    load(transform(get_writers(), extract()))
