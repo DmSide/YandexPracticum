@@ -31,7 +31,7 @@ def extract():
         -- comma-separated actor_ids
         GROUP_CONCAT(DISTINCT a.id) as actor_ids, 
         -- comma-separated actor_names
-        GROUP_CONCAT(DISTINCT a.name) as actor_names,
+        GROUP_CONCAT(DISTINCT REPLACE(a.name, "N/A", "")) as actor_names,
         (
 		    CASE WHEN m.writer == NULL or m.writer == "" 
             THEN  m.writers
@@ -41,7 +41,6 @@ def extract():
         FROM movies as m
         LEFT JOIN movie_actors as ma ON m.id == ma.movie_id
         LEFT JOIN actors as a ON ma.actor_id == a.id
-        WHERE a.name != "N/A"
         GROUP BY m.id 
     """)
 
