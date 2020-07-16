@@ -27,9 +27,9 @@ def extract():
                 from movie_actors
                 where movie_id = movies.id
             )
-        ),
+        ) as actors_id,
         
-        max(writer, writers)
+        max(writer, writers) as writers
         from movies
     """)
 
@@ -110,7 +110,10 @@ def load(acts):
     :param acts:
     :return:
     """
-    es = Elasticsearch([{'host': settings.ELASTIC_HOST, 'port': settings.ELASTIC_PORT}])
+    es = Elasticsearch([{
+        'host': settings.ELASTIC_HOST,
+        'port': settings.ELASTIC_PORT
+    }])
     bulk(es, acts)
 
     return True
