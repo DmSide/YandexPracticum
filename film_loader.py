@@ -6,6 +6,16 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 
 
+def get_writers():
+    """
+        extract data from sql-db
+        :return:
+        """
+    connection = sqlite3.connect(settings.DB_PATH)
+    cursor = connection.cursor()
+    return {row[0]: row[1] for row in cursor.execute('select * from writers where name != "N/A"')}
+
+
 def extract():
     """
     extract data from sql-db
@@ -13,8 +23,6 @@ def extract():
     """
     connection = sqlite3.connect(settings.DB_PATH)
     cursor = connection.cursor()
-
-    # Наверняка это пилится в один sql - запрос, но мне как-то лениво)
 
     # Получаем все поля для индекса, кроме списка актеров и сценаристов, для них только id
     cursor.execute("""
@@ -24,7 +32,12 @@ def extract():
         GROUP_CONCAT(DISTINCT a.id) as actor_ids, 
         -- comma-separated actor_names
         GROUP_CONCAT(DISTINCT a.name) as actor_names,
-        max(writer, writers) as writer_ids
+        (
+		    CASE WHEN m.writer == NULL or m.writer == "" 
+            THEN  m.writers
+            ELSE '[{"id":"'||m.writer||'"}]'
+            END
+		) as writer_ids
         FROM movies as m
         LEFT JOIN movie_actors as ma ON m.id == ma.movie_id
         LEFT JOIN actors as a ON ma.actor_id == a.id
@@ -32,12 +45,7 @@ def extract():
         GROUP BY m.id 
     """)
 
-    raw_data = cursor.fetchall()
-
-    # Нужны для соответсвия идентификатора и человекочитаемого названия
-    writers = {row[0]: row[1] for row in cursor.execute('select * from writers where name != "N/A"')}
-
-    return writers, raw_data
+    return cursor.fetchall()
 
 
 def transform(__writers, __raw_data):
@@ -55,11 +63,9 @@ def transform(__writers, __raw_data):
         actors_ids = actors_id.split(",")
         actors_names = actors_name.split(",")
 
-        if raw_writers[0] == '[':
-            parsed = json.loads(raw_writers)
-            new_writers = ','.join([writer_row['id'] for writer_row in parsed])
-        else:
-            new_writers = raw_writers
+        # Получаем список writers
+        parsed = json.loads(raw_writers)
+        new_writers = ','.join([writer_row['id'] for writer_row in parsed])
 
         writers_list = [(writer_id, __writers.get(writer_id)) for writer_id in new_writers.split(',')]
         actors_list = [
@@ -121,4 +127,4 @@ def load(acts):
 
 
 if __name__ == '__main__':
-    load(transform(*extract()))
+    load(transform(*extract(), *get_writers()))
