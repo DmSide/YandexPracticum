@@ -34,8 +34,8 @@ def extract():
         GROUP_CONCAT(DISTINCT a.name) as actor_names,
         (
 		    CASE WHEN m.writer == NULL or m.writer == "" 
-            THEN  m.writers
-            ELSE '[{"id":"'||m.writer||'"}]'
+            THEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(m.writers, '"id"', ''), '[', ''), ']', ''), '{: "', ''), '"}', '')
+            ELSE m.writer
             END
 		) as writer_ids
         FROM movies as m
@@ -127,4 +127,4 @@ def load(acts):
 
 
 if __name__ == '__main__':
-    load(transform(*extract(), *get_writers()))
+    load(transform(get_writers(), extract()))
