@@ -13,7 +13,7 @@ def get_writers():
         """
     connection = sqlite3.connect(settings.DB_PATH)
     cursor = connection.cursor()
-    return {row[0]: row[1] for row in cursor.execute('select * from writers where name != "N/A"')}
+    return {row[0]: row[1] for row in cursor.execute('SELECT DISTINCT * from writers WHERE name != "N/A"')}
 
 
 def extract():
@@ -33,11 +33,11 @@ def extract():
         -- comma-separated actor_names
         GROUP_CONCAT(DISTINCT REPLACE(a.name, "N/A", "")) as actor_names,
         (
-		    CASE WHEN m.writer == NULL or m.writer == "" 
-            THEN  m.writers
+            CASE WHEN m.writer == NULL or m.writer == ""
+            THEN m.writers
             ELSE '[{"id":"'||m.writer||'"}]'
             END
-		) as writer_ids
+        ) as writer_ids
         FROM movies as m
         LEFT JOIN movie_actors as ma ON m.id == ma.movie_id
         LEFT JOIN actors as a ON ma.actor_id == a.id
@@ -71,9 +71,8 @@ def transform(_writers, _raw_data):
         ]
 
         # Получаем список writers
-        writer_ids = [writer_row['id'] for writer_row in json.loads(raw_writers)]
+        writer_ids = list(set([writer_row['id'] for writer_row in json.loads(raw_writers)]))
         writer_names = [_writers.get(_id) for _id in writer_ids if _writers.get(_id)]
-        writer_names_str = ','.join(writer_names)
         writer_list = [
             {
                 "id": writer[0],
@@ -100,7 +99,7 @@ def transform(_writers, _raw_data):
                 document[key] = None
 
         document['actors_names'] = actors_name or None
-        document['writers_names'] = writer_names_str or None
+        document['writers_names'] = writer_names or None
 
         import pprint
         pprint.pprint(document)
