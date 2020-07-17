@@ -8,12 +8,12 @@ from elasticsearch.helpers import bulk
 
 def get_writers():
     """
-        extract data from sql-db
+        extract information about writers from sql-db
         :return:
         """
-    connection = sqlite3.connect(settings.DB_PATH)
-    cursor = connection.cursor()
-    return {row[0]: row[1] for row in cursor.execute('SELECT DISTINCT * from writers WHERE name != "N/A"')}
+    with sqlite3.connect(settings.DB_PATH) as connection:
+        cursor = connection.cursor()
+        return {row[0]: row[1] for row in cursor.execute('SELECT DISTINCT id, name from writers WHERE name != "N/A"')}
 
 
 def extract():
@@ -21,30 +21,30 @@ def extract():
     extract data from sql-db
     :return:
     """
-    connection = sqlite3.connect(settings.DB_PATH)
-    cursor = connection.cursor()
+    with sqlite3.connect(settings.DB_PATH) as connection:
+        cursor = connection.cursor()
 
-    # Получаем все поля для индекса, кроме списка актеров и сценаристов, для них только id
-    cursor.execute("""
-        SELECT
-            m.id, m.imdb_rating, m.genre, m.title, m.plot, m.director,
-        -- comma-separated actor_ids
-        GROUP_CONCAT(DISTINCT a.id) as actor_ids, 
-        -- comma-separated actor_names
-        GROUP_CONCAT(DISTINCT REPLACE(a.name, "N/A", "")) as actor_names,
-        (
-            CASE WHEN m.writer == NULL or m.writer == ""
-            THEN m.writers
-            ELSE '[{"id":"'||m.writer||'"}]'
-            END
-        ) as writer_ids
-        FROM movies as m
-        LEFT JOIN movie_actors as ma ON m.id == ma.movie_id
-        LEFT JOIN actors as a ON ma.actor_id == a.id
-        GROUP BY m.id 
-    """)
+        # Получаем все поля для индекса, кроме списка актеров и сценаристов, для них только id
+        cursor.execute("""
+            SELECT
+                m.id, m.imdb_rating, m.genre, m.title, m.plot, m.director,
+            -- comma-separated actor_ids
+            GROUP_CONCAT(DISTINCT a.id) as actor_ids, 
+            -- comma-separated actor_names
+            GROUP_CONCAT(DISTINCT REPLACE(a.name, "N/A", "")) as actor_names,
+            (
+                CASE WHEN m.writer == NULL or m.writer == ""
+                THEN m.writers
+                ELSE '[{"id":"'||m.writer||'"}]'
+                END
+            ) as writer_ids
+            FROM movies as m
+            LEFT JOIN movie_actors as ma ON m.id == ma.movie_id
+            LEFT JOIN actors as a ON ma.actor_id == a.id
+            GROUP BY m.id 
+        """)
 
-    return cursor.fetchall()
+        return cursor.fetchall()
 
 
 def transform(_writers, _raw_data):
